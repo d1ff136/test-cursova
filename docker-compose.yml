@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mmr_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mmr_user
+      POSTGRES_PASSWORD: mmr_password
+      POSTGRES_DB: mmr_db
+    ports:
+      - "5432:5432"
+    volumes:
+      # Офіційний образ Postgres автоматично виконує всі .sql/.sh файли з цієї
+      # теки за алфавітом - але ЛИШЕ при першому старті, коли volume ще порожній.
+      - ./sql/dump.sql:/docker-entrypoint-initdb.d/01-dump.sql:ro
+      - mmr_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mmr_user -d mmr_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    container_name: mmr_api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://mmr_user:mmr_password@db:5432/mmr_db
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mmr_pgdata:

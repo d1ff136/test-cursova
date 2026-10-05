@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Орел / Решка — MMR &amp; Матчмейкінг</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <div class="head">
+    <div class="brand">
+      <div class="coin-logo"></div>
+      <div class="brand-text">
+        <h1>ОРЕЛ<span> / </span>РЕШКА</h1>
+        <p>MMR та матчмейкінг · Solo 1×1 · Party 3×3</p>
+      </div>
+    </div>
+    <div class="conn">
+      <div class="conn-row">
+        <span class="dot" id="connDot"></span>
+        <span class="conn-label" id="connLabel">не перевірено</span>
+        <button class="btn-mini" id="pingBtn" type="button">Перевірити</button>
+        <button class="btn-mini icon-btn" id="advToggleBtn" type="button" title="Налаштування з'єднання">⚙</button>
+      </div>
+      <div class="api-input-row" id="advPanel" style="display:none;">
+        <input class="api-url" id="apiUrlInput" type="text" spellcheck="false">
+        <button class="btn-mini" id="saveApiBtn" type="button">Зберегти</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MY ACCOUNT BAR ============ -->
+  <div class="myid-bar">
+    <div class="myid-left">
+      <span class="myid-tag">Мій акаунт</span>
+      <span class="myid-name" id="myNameDisplay">не встановлено</span>
+      <code id="myIdDisplay">—</code>
+    </div>
+    <div class="myid-actions">
+      <button class="btn-mini" id="myIdCopyBtn" type="button">Копіювати ID</button>
+      <button class="btn-mini" id="myIdEditBtn" type="button">Змінити</button>
+    </div>
+  </div>
+  <div class="myid-edit-row" id="myIdEditRow" style="display:none;">
+    <input type="text" id="myIdInput" class="api-url" style="width:300px;" placeholder="UUID гравця" spellcheck="false">
+    <button class="btn-mini" id="myIdSaveBtn" type="button">Зберегти</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="players">Гравці</button>
+    <button class="tab" data-tab="teams">Команди</button>
+    <button class="tab" data-tab="matches">Матчі</button>
+    <button class="tab" data-tab="leaderboard">Рейтинг</button>
+  </div>
+
+  <!-- ============ PLAYERS ============ -->
+  <div class="panel active" id="panel-players">
+    <div class="grid">
+      <div class="card">
+        <div class="seg" id="authModeSeg">
+          <button type="button" class="active" data-auth="register">Реєстрація</button>
+          <button type="button" data-auth="login">Вхід</button>
+        </div>
+
+        <div id="registerBlock">
+          <h2>Реєстрація гравця <span class="chip">POST /users/</span></h2>
+          <p class="desc">Новий гравець одразу отримує стартовий рейтинг 1000 MMR в обох режимах — Solo та Party. Після реєстрації ваш нік і ID автоматично збережуться вище.</p>
+          <form id="registerForm">
+            <div class="field">
+              <label>Ім'я користувача</label>
+              <input type="text" id="reg-username" placeholder="mmr_player" required minlength="3" maxlength="32">
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input type="email" id="reg-email" placeholder="player@example.com" required>
+            </div>
+            <div class="field">
+              <label>Пароль</label>
+              <input type="password" id="reg-password" placeholder="мінімум 8 символів" required minlength="8" maxlength="128">
+            </div>
+            <button class="btn wide" type="submit">Зареєструвати гравця</button>
+          </form>
+        </div>
+
+        <div id="loginBlock" style="display:none;">
+          <h2>Вхід в акаунт <span class="chip">POST /users/login</span></h2>
+          <p class="desc">Увійдіть у вже створений акаунт за ніком і паролем — нік та ID збережуться вище.</p>
+          <form id="loginForm">
+            <div class="field">
+              <label>Ім'я користувача</label>
+              <input type="text" id="login-username" placeholder="mmr_player" required minlength="3" maxlength="32">
+            </div>
+            <div class="field">
+              <label>Пароль</label>
+              <input type="password" id="login-password" placeholder="ваш пароль" required minlength="8" maxlength="128">
+            </div>
+            <button class="btn wide" type="submit">Увійти</button>
+          </form>
+        </div>
+
+        <div class="result" id="registerResult"></div>
+      </div>
+
+      <div class="card">
+        <h2>Профіль гравця <span class="chip">GET /users/&#123;id&#125;</span></h2>
+        <p class="desc">Введіть ID гравця, щоб побачити акаунт та рейтинги Solo / Party.</p>
+        <form id="lookupForm">
+          <div class="field">
+            <label>ID гравця (UUID)</label>
+            <input type="text" id="lookup-id" placeholder="00000000-0000-0000-0000-000000000000" required>
+          </div>
+          <button class="btn secondary wide" type="submit">Показати профіль</button>
+        </form>
+        <div class="result" id="lookupResult"></div>
+      </div>
+    </div>
+
+    <div class="card" id="profileCard" style="display:none;">
+      <div class="profile-head">
+        <div class="name" id="p-username">—</div>
+        <span class="pill mode" id="p-role" style="margin-right:6px;">user</span>
+        <span class="pill mode" id="p-active">активний</span>
+      </div>
+      <div class="kv"><span class="k">Email</span><span class="v" id="p-email">—</span></div>
+      <div class="kv">
+        <span class="k">ID</span>
+        <span class="v" id="p-id">—</span>
+      </div>
+      <div class="kv"><span class="k"></span><button class="btn link" id="p-set-mine" type="button">Це мій акаунт — зберегти як «Мій ID»</button></div>
+      <div class="kv"><span class="k">Зареєстрований</span><span class="v" id="p-created">—</span></div>
+
+      <div class="field-row" style="margin-top:16px;">
+        <button class="btn secondary wide" id="p-edit-toggle" type="button">Редагувати профіль</button>
+        <button class="btn secondary wide" id="p-deactivate-btn" type="button" style="color:var(--red);">Деактивувати акаунт</button>
+      </div>
+      <div class="field-row" id="p-admin-actions" style="margin-top:10px;display:none;">
+        <button class="btn secondary wide" id="p-reactivate-btn" type="button">Реактивувати (admin)</button>
+        <button class="btn secondary wide" id="p-promote-btn" type="button">Зробити admin</button>
+      </div>
+      <form id="editProfileForm" style="display:none;margin-top:14px;">
+        <div class="field">
+          <label>Нове ім'я користувача (необов'язково)</label>
+          <input type="text" id="edit-username" placeholder="залишити без змін" minlength="3" maxlength="32">
+        </div>
+        <div class="field">
+          <label>Новий email (необов'язково)</label>
+          <input type="email" id="edit-email" placeholder="залишити без змін">
+        </div>
+        <div class="field">
+          <label>Новий пароль (необов'язково)</label>
+          <input type="password" id="edit-password" placeholder="залишити без змін" minlength="8" maxlength="128">
+        </div>
+        <button class="btn wide" type="submit">Зберегти зміни <span class="chip">PATCH /users/&#123;id&#125;</span></button>
+      </form>
+      <div class="result" id="editProfileResult"></div>
+
+      <div style="height:16px;"></div>
+      <div class="rating-grid">
+        <div class="rating-box" id="p-solo-box">
+          <div class="mode-label">Solo · 1×1</div>
+          <div class="mmr" id="p-solo-mmr">—</div>
+          <div class="mmr-label">MMR</div>
+          <span class="pill rank-unranked" id="p-solo-rank">—</span>
+          <div class="wl">
+            <span><b id="p-solo-w">0</b> W</span>
+            <span><b id="p-solo-l">0</b> L</span>
+            <span><b id="p-solo-mp">0</b> матчів</span>
+          </div>
+          <div class="world" id="p-solo-world"></div>
+        </div>
+        <div class="rating-box" id="p-party-box">
+          <div class="mode-label">Party · 3×3</div>
+          <div class="mmr" id="p-party-mmr">—</div>
+          <div class="mmr-label">MMR</div>
+          <span class="pill rank-unranked" id="p-party-rank">—</span>
+          <div class="wl">
+            <span><b id="p-party-w">0</b> W</span>
+            <span><b id="p-party-l">0</b> L</span>
+            <span><b id="p-party-mp">0</b> матчів</span>
+          </div>
+          <div class="world" id="p-party-world"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TEAMS ============ -->
+  <div class="panel" id="panel-teams">
+    <div class="card">
+      <h2>Створити команду <span class="chip">POST /teams/</span></h2>
+      <p class="desc">Команда для Party-режиму завжди складається рівно з 3 різних гравців. Вкажіть їхні ID (перше поле автоматично підставляє «Мій ID»).</p>
+      <form id="teamForm">
+        <div class="field">
+          <label>Назва команди (необов'язково)</label>
+          <input type="text" id="team-name" placeholder="Нічна варта" maxlength="64">
+        </div>
+        <div class="field">
+          <label>Гравець 1 — ID</label>
+          <input type="text" id="team-u1" placeholder="UUID гравця" required>
+        </div>
+        <div class="field">
+          <label>Гравець 2 — ID</label>
+          <input type="text" id="team-u2" placeholder="UUID гравця" required>
+        </div>
+        <div class="field">
+          <label>Гравець 3 — ID</label>
+          <input type="text" id="team-u3" placeholder="UUID гравця" required>
+        </div>
+        <label class="checkline"><input type="checkbox" id="team-permanent"> Постійне паті (не одноразова команда)</label>
+        <button class="btn wide" type="submit">Створити команду</button>
+      </form>
+      <div class="result" id="teamResult"></div>
+    </div>
+
+    <div class="card">
+      <h2>Знайти / редагувати команду <span class="chip">GET, PATCH, DELETE /teams/&#123;id&#125;</span></h2>
+      <p class="desc">Склад команди (гравці) не змінюється після створення — лише назва, статус «постійне паті» або повне видалення (якщо команда ще не грала матчів).</p>
+      <form id="teamLookupForm">
+        <div class="field">
+          <label>ID команди (UUID)</label>
+          <input type="text" id="team-lookup-id" placeholder="00000000-0000-0000-0000-000000000000" required>
+        </div>
+        <button class="btn secondary wide" type="submit">Показати команду</button>
+      </form>
+      <div class="result" id="teamLookupResult"></div>
+
+      <div id="teamEditCard" style="display:none;margin-top:16px;">
+        <div class="kv"><span class="k">ID</span><span class="v" id="te-id">—</span></div>
+        <div class="kv"><span class="k">Учасники</span><span class="v" id="te-members">—</span></div>
+        <form id="teamEditForm" style="margin-top:12px;">
+          <div class="field">
+            <label>Назва команди</label>
+            <input type="text" id="te-name" maxlength="64">
+          </div>
+          <label class="checkline"><input type="checkbox" id="te-permanent"> Постійне паті</label>
+          <button class="btn wide" type="submit">Зберегти зміни <span class="chip">PATCH</span></button>
+        </form>
+        <button class="btn secondary wide" id="teamDeleteBtn" type="button" style="color:var(--red);margin-top:10px;">Видалити команду <span class="chip">DELETE</span></button>
+        <div class="result" id="teamEditResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MATCHES ============ -->
+  <div class="panel" id="panel-matches">
+    <div class="grid">
+      <div class="card">
+        <h2>Почати матч <span class="chip">POST /matches/solo|party/find</span></h2>
+        <p class="desc">Автопошук сам знаходить вільного суперника з найближчим MMR. Право обирати сторону монети (Орел/Решка) автоматично отримує сторона з нижчим MMR.</p>
+        <div class="seg" id="matchModeSeg">
+          <button type="button" class="active" data-mode="solo">Solo 1×1</button>
+          <button type="button" data-mode="party">Party 3×3</button>
+        </div>
+        <div class="seg" id="matchPairSeg">
+          <button type="button" class="active" data-pair="auto">🎲 Автопошук</button>
+          <button type="button" data-pair="manual">Вручну (2 ID)</button>
+        </div>
+
+        <form id="soloFindForm">
+          <div class="field">
+            <label>Мій ID гравця</label>
+            <input type="text" id="solo-find-id" placeholder="UUID гравця" required>
+            <small class="hint">Сервер сам знайде вільного суперника з найближчим Solo-MMR і одразу створить матч.</small>
+          </div>
+          <button class="btn wide" type="submit">Знайти суперника</button>
+        </form>
+
+        <form id="soloMatchForm" style="display:none;">
+          <div class="field">
+            <label>Гравець 1 — ID</label>
+            <input type="text" id="solo-p1" placeholder="UUID гравця" required>
+          </div>
+          <div class="field">
+            <label>Гравець 2 — ID</label>
+            <input type="text" id="solo-p2" placeholder="UUID гравця" required>
+          </div>
+          <button class="btn wide" type="submit">Почати Solo-матч</button>
+        </form>
+
+        <form id="partyFindForm" style="display:none;">
+          <div class="field">
+            <label>ID моєї команди</label>
+            <input type="text" id="party-find-id" placeholder="UUID команди" required>
+            <small class="hint">Сервер сам знайде вільну команду з найближчим сумарним Party-MMR і одразу створить матч.</small>
+          </div>
+          <button class="btn wide" type="submit">Знайти команду-суперника</button>
+        </form>
+
+        <form id="partyMatchForm" style="display:none;">
+          <div class="field">
+            <label>Команда 1 — ID</label>
+            <input type="text" id="party-t1" placeholder="UUID команди" required>
+          </div>
+          <div class="field">
+            <label>Команда 2 — ID</label>
+            <input type="text" id="party-t2" placeholder="UUID команди" required>
+          </div>
+          <button class="btn wide" type="submit">Почати Party-матч</button>
+        </form>
+        <div class="result" id="startMatchResult"></div>
+      </div>
+
+      <div class="card">
+        <h2>Відкрити матч <span class="chip">GET /matches/&#123;id&#125;</span></h2>
+        <p class="desc">Введіть ID матчу, щоб побачити стан, раунди та зіграти наступний раунд.</p>
+        <form id="openMatchForm">
+          <div class="field">
+            <label>ID матчу (UUID)</label>
+            <input type="text" id="open-match-id" placeholder="00000000-0000-0000-0000-000000000000" required>
+          </div>
+          <button class="btn secondary wide" type="submit">Відкрити матч</button>
+        </form>
+        <div class="result" id="openMatchResult"></div>
+      </div>
+    </div>
+
+    <div class="card" id="matchCard" style="display:none;">
+      <div class="match-banner">
+        <div>
+          <span class="pill mode" id="m-mode">SOLO</span>
+          <span class="pill status-pending" id="m-status" style="margin-left:6px;">pending</span>
+        </div>
+        <div class="mid">ID: <span id="m-id">—</span></div>
+      </div>
+
+      <div class="sides">
+        <div class="side-box" id="side1-box">
+          <div class="side-label">Сторона 1</div>
+          <div class="side-mmr" id="m-side1-mmr">—</div>
+        </div>
+        <div class="side-vs">VS</div>
+        <div class="side-box" id="side2-box">
+          <div class="side-label">Сторона 2</div>
+          <div class="side-mmr" id="m-side2-mmr">—</div>
+        </div>
+      </div>
+
+      <div class="kv"><span class="k">Формат</span><span class="v" id="m-bestof">до 2 перемог (Bo3)</span></div>
+      <div class="kv"><span class="k">Обирає сторону монети</span><span class="v" id="m-chooser">—</span></div>
+      <div class="kv"><span class="k">Створено</span><span class="v" id="m-created">—</span></div>
+      <div class="kv" id="m-finished-row" style="display:none;"><span class="k">Завершено</span><span class="v" id="m-finished">—</span></div>
+
+      <div class="field-row" id="matchActionsRow" style="margin-top:14px;">
+        <button class="btn secondary wide" id="matchCancelBtn" type="button">Скасувати матч <span class="chip">POST /cancel</span></button>
+        <button class="btn secondary wide" id="matchDeleteBtn" type="button" style="color:var(--red);">Видалити матч <span class="chip">DELETE</span></button>
+      </div>
+      <div class="result" id="matchActionResult"></div>
+
+      <div id="roundFormWrap" style="margin-top:20px;">
+        <h2 style="margin-bottom:12px;">Зіграти раунд <span class="chip">POST /matches/&#123;id&#125;/rounds</span></h2>
+        <div class="coinflip-wrap">
+          <div class="coinflip" id="coinflip">
+            <div class="coinflip-inner">
+              <div class="coin-face heads"><span class="letter">О</span><span class="word">ОРЕЛ</span></div>
+              <div class="coin-face tails"><span class="letter">Р</span><span class="word">РЕШКА</span></div>
+            </div>
+          </div>
+          <div class="coin-shadow"></div>
+          <div class="coinflip-result" id="coinflipResult">Оберіть сторону та підкиньте монету</div>
+        </div>
+        <form id="roundForm">
+          <div class="field">
+            <label>Вибір гравця, що обирає (coin_choice)</label>
+            <select id="round-choice">
+              <option value="heads">Орел</option>
+              <option value="tails">Решка</option>
+            </select>
+            <small class="hint">Результат підкидання (Орел/Решка) визначає сервер випадково — жоден гравець не бачить і не контролює його заздалегідь.</small>
+          </div>
+          <button class="btn wide" type="submit" id="roundSubmitBtn">Підкинути монету</button>
+        </form>
+        <div class="result" id="roundResult"></div>
+      </div>
+
+      <div id="matchFinishedNote" style="display:none;margin-top:18px;padding:14px 16px;border-radius:10px;background:rgba(87,183,135,.08);border:1px solid var(--green-dim);">
+        <b style="color:var(--green);">Матч завершено.</b> <span id="matchFinishedText"></span>
+      </div>
+
+      <h2 style="margin:22px 0 10px;">Раунди <span class="chip" id="roundsCountChip">0</span></h2>
+      <table id="roundsTable">
+        <thead><tr><th>#</th><th>Вибір</th><th>Результат</th><th>Перемогла сторона</th><th>Час</th></tr></thead>
+        <tbody id="roundsBody"></tbody>
+      </table>
+      <div class="empty" id="roundsEmpty">Раундів ще немає</div>
+    </div>
+  </div>
+
+  <!-- ============ LEADERBOARD ============ -->
+  <div class="panel" id="panel-leaderboard">
+    <div class="card">
+      <h2>Глобальний рейтинг <span class="chip">GET /leaderboard/&#123;mode&#125;</span></h2>
+      <p class="desc">Топ гравців за MMR у вибраному режимі.</p>
+      <div class="seg" id="lbModeSeg">
+        <button type="button" class="active" data-mode="solo">Solo</button>
+        <button type="button" data-mode="party">Party</button>
+      </div>
+      <div class="field-row" style="align-items:flex-end;">
+        <div class="field" style="max-width:110px;">
+          <label>Ліміт</label>
+          <input type="number" id="lb-limit" value="20" min="1" max="500">
+        </div>
+        <div class="field" style="max-width:110px;">
+          <label>Сторінка</label>
+          <input type="number" id="lb-page" value="1" min="1">
+        </div>
+        <div class="field" style="max-width:150px;">
+          <label>Сортування</label>
+          <select id="lb-sort">
+            <option value="desc">MMR ↓ (найкращі)</option>
+            <option value="asc">MMR ↑ (найгірші)</option>
+          </select>
+        </div>
+        <div class="field" style="flex:none;">
+          <button class="btn secondary" id="lbLoadBtn" type="button">Оновити рейтинг</button>
+        </div>
+      </div>
+      <div id="lbList"></div>
+      <div class="empty" id="lbEmpty" style="display:none;">Даних для показу немає</div>
+      <div class="field-row" style="margin-top:12px;">
+        <button class="btn secondary wide" id="lbPrevBtn" type="button">← Попередня сторінка</button>
+        <button class="btn secondary wide" id="lbNextBtn" type="button">Наступна сторінка →</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Легкий клієнт для локального FastAPI-бекенду. Переконайтеся, що backend запущено та в <code>app/main.py</code> додано CORS-мідлвар.
+  </footer>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

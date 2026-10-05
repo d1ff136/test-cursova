@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.gitignore
+.env
+frontend/
+docs/
+sql/migrations/
+test/
+tests/
+*.md
